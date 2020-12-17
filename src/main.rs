@@ -20,6 +20,13 @@ fn main() -> Result<(), io::Error> {
         .output()
         .expect("Prikaz 'git log' selhal");
 
+
+    let git_stash = Command::new("git")
+        .arg("stash")
+        .arg("list")
+        .output()
+        .expect("Prikaz 'git stash' selhal");
+
     let stdout = io::stdout().into_raw_mode()?;
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
@@ -48,5 +55,11 @@ fn main() -> Result<(), io::Error> {
             .block(Block::default().title("log").borders(Borders::ALL))
             .wrap(Wrap {trim: true });
         f.render_widget(para, chunks[1]);
+
+        let text = String::from_utf8_lossy(&git_stash.stdout[..]);
+        let para = Paragraph::new(&text[..])
+            .block(Block::default().title("stash").borders(Borders::ALL))
+            .wrap(Wrap {trim: true });
+        f.render_widget(para, chunks[2]);
     })
 }
