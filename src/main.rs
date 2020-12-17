@@ -20,6 +20,10 @@ fn main() -> Result<(), io::Error> {
         .output()
         .expect("Prikaz 'git log' selhal");
 
+    let git_tags = Command::new("git")
+        .arg("tag")
+        .output()
+        .expect("Prikaz 'git tag' selhal");
 
     let git_stash = Command::new("git")
         .arg("stash")
@@ -44,11 +48,28 @@ fn main() -> Result<(), io::Error> {
             )
             .split(f.size());
 
+        let chunks2 = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(0)
+            .constraints(
+                [
+                    Constraint::Percentage(50),
+                    Constraint::Percentage(50),
+                ].as_ref()
+            )
+            .split(chunks[0]);
+
         let text = String::from_utf8_lossy(&git_branches.stdout[..]);
         let para = Paragraph::new(&text[..])
-            .block(Block::default().title("Branch").borders(Borders::ALL))
+            .block(Block::default().title("branch").borders(Borders::ALL))
             .wrap(Wrap {trim: true });
-        f.render_widget(para, chunks[0]);
+        f.render_widget(para, chunks2[0]);
+
+        let text = String::from_utf8_lossy(&git_tags.stdout[..]);
+        let para = Paragraph::new(&text[..])
+            .block(Block::default().title("tag").borders(Borders::ALL))
+            .wrap(Wrap {trim: true });
+        f.render_widget(para, chunks2[1]);
 
         let text = String::from_utf8_lossy(&git_logs.stdout[..]);
         let para = Paragraph::new(&text[..])
