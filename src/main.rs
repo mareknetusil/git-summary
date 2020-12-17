@@ -2,34 +2,40 @@ use std::process::Command;
 // TUI
 use std::io;
 use termion::raw::IntoRawMode;
-use tui::Terminal;
+use tui::{Frame, Terminal};
 use tui::style::{Style, Color, Modifier};
 use tui::text::{Span, Spans};
-use tui::backend::TermionBackend;
+use tui::backend::{Backend, TermionBackend};
 use tui::widgets::{Wrap, Paragraph, Block, Borders};
-use tui::layout::{Alignment, Layout, Constraint, Direction};
+use tui::layout::{Alignment, Layout, Constraint, Direction, Rect};
+
+
+fn git_cmd(cmd: &str, args: &[&str]) -> std::process::Output {
+    Command::new("git")
+        .arg(cmd)
+        .args(args)
+        .output()
+        .expect(format!("Prikaz '{} {}' selhal!", cmd, args.join(" ")).as_str())
+}
+
+fn draw_block<B>(output: std::process::Output, title: &str, f: &mut Frame<B>, area: Rect)
+where
+    B: Backend,
+{
+    let text = String::from_utf8_lossy(&output.stdout[..]);
+    let para = Paragraph::new(&text[..])
+        .block(Block::default().title(title).borders(Borders::ALL))
+        .wrap(Wrap {trim: true });
+    f.render_widget(para, area);
+}
+
 
 fn main() -> Result<(), io::Error> {
-    let git_branches = Command::new("git")
-        .arg("branch")
-        .output()
-        .expect("Prikaz 'git branch' selhal");
-
-    let git_logs = Command::new("git")
-        .arg("log")
-        .output()
-        .expect("Prikaz 'git log' selhal");
-
-    let git_tags = Command::new("git")
-        .arg("tag")
-        .output()
-        .expect("Prikaz 'git tag' selhal");
-
-    let git_stash = Command::new("git")
-        .arg("stash")
-        .arg("list")
-        .output()
-        .expect("Prikaz 'git stash' selhal");
+    let git_branches = git_cmd("branch", [].as_ref());
+    let git_logs = git_cmd("log", [].as_ref());
+    let git_tags = git_cmd("tag", ["-n"].as_ref());
+    let git_stash = git_cmd("stash", [].as_ref());
+    let git_remotes = git_cmd("remote", ["-v"].as_ref());
 
     let stdout = io::stdout().into_raw_mode()?;
     let backend = TermionBackend::new(stdout);
@@ -57,30 +63,11 @@ fn main() -> Result<(), io::Error> {
                     Constraint::Percentage(50),
                 ].as_ref()
             )
-            .split(chunks[0]);
+            .split(chunks[2]);
 
-        let text = String::from_utf8_lossy(&git_branches.stdout[..]);
-        let para = Paragraph::new(&text[..])
-            .block(Block::default().title("branch").borders(Borders::ALL))
-            .wrap(Wrap {trim: true });
-        f.render_widget(para, chunks2[0]);
-
-        let text = String::from_utf8_lossy(&git_tags.stdout[..]);
-        let para = Paragraph::new(&text[..])
-            .block(Block::default().title("tag").borders(Borders::ALL))
-            .wrap(Wrap {trim: true });
-        f.render_widget(para, chunks2[1]);
-
-        let text = String::from_utf8_lossy(&git_logs.stdout[..]);
-        let para = Paragraph::new(&text[..])
-            .block(Block::default().title("log").borders(Borders::ALL))
-            .wrap(Wrap {trim: true });
-        f.render_widget(para, chunks[1]);
-
-        let text = String::from_utf8_lossy(&git_stash.stdout[..]);
-        let para = Paragraph::new(&text[..])
-            .block(Block::default().title("stash").borders(Borders::ALL))
-            .wrap(Wrap {trim: true });
-        f.render_widget(para, chunks[2]);
+        draw_block(git_branches, "branch", f, chunks[0]);
+        draw_block(git_tags, "tag", f, chunks2[1]);
+        draw_block(git_logs, "log", f, chunks[1]);
+        draw_block(git_stash, "stash", f, chunks2[0]);
     })
 }
