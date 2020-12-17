@@ -31,8 +31,8 @@ fn main() -> Result<(), io::Error> {
             .constraints(
                 [
                     Constraint::Percentage(10),
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(80)
+                    Constraint::Percentage(40),
+                    Constraint::Percentage(40)
                 ].as_ref()
             )
             .split(f.size());
@@ -40,14 +40,12 @@ fn main() -> Result<(), io::Error> {
         let text = String::from_utf8_lossy(&git_branches.stdout[..]);
         let para = Paragraph::new(&text[..])
             .block(Block::default().title("Branch").borders(Borders::ALL))
-            .alignment(Alignment::Center)
             .wrap(Wrap {trim: true });
         f.render_widget(para, chunks[0]);
 
         let text = String::from_utf8_lossy(&git_logs.stdout[..]);
         let para = Paragraph::new(&text[..])
             .block(Block::default().title("log").borders(Borders::ALL))
-            .alignment(Alignment::Center)
             .wrap(Wrap {trim: true });
         f.render_widget(para, chunks[1]);
     })
