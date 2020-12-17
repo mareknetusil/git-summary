@@ -1,4 +1,5 @@
 use std::process::Command;
+use std::str;
 // TUI
 use std::io;
 use termion::raw::IntoRawMode;
@@ -22,8 +23,9 @@ fn draw_block<B>(output: std::process::Output, title: &str, f: &mut Frame<B>, ar
 where
     B: Backend,
 {
-    let text = String::from_utf8_lossy(&output.stdout[..]);
-    let para = Paragraph::new(&text[..])
+    let text = str::from_utf8(&output.stdout[..])
+        .expect("Nepodarilo se interpretovat stdout jako utf-8");
+    let para = Paragraph::new(text)
         .block(Block::default().title(title).borders(Borders::ALL))
         .wrap(Wrap {trim: true });
     f.render_widget(para, area);
