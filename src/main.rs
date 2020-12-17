@@ -31,12 +31,24 @@ where
     f.render_widget(para, area);
 }
 
+fn split_by_percentages(pers: &[u16], dir: Direction,
+                        margin: u16, area: Rect) -> Vec<Rect> {
+    Layout::default()
+        .direction(dir)
+        .margin(margin)
+        .constraints(
+            pers.iter()
+            .map(|&p| Constraint::Percentage(p))
+            .collect::<Vec<_>>()
+        )
+        .split(area)
+}
 
 fn main() -> Result<(), io::Error> {
-    let git_branches = git_cmd("branch", [].as_ref());
+    let git_branches = git_cmd("show-branch", ["-a"].as_ref());
     let git_logs = git_cmd("log", [].as_ref());
     let git_tags = git_cmd("tag", ["-n"].as_ref());
-    let git_stash = git_cmd("stash", [].as_ref());
+    let git_stash = git_cmd("stash", ["list"].as_ref());
     let git_remotes = git_cmd("remote", ["-v"].as_ref());
 
     let stdout = io::stdout().into_raw_mode()?;
@@ -44,32 +56,15 @@ fn main() -> Result<(), io::Error> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
     terminal.draw(|f| {
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .margin(1)
-            .constraints(
-                [
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(40),
-                    Constraint::Percentage(40)
-                ].as_ref()
-            )
-            .split(f.size());
+        let cols = split_by_percentages(
+            &[25, 40, 35], Direction::Horizontal, 1, f.size());
+        let right_col = split_by_percentages(
+            &[25, 25, 50], Direction::Vertical, 0, cols[2]);
 
-        let chunks2 = Layout::default()
-            .direction(Direction::Vertical)
-            .margin(0)
-            .constraints(
-                [
-                    Constraint::Percentage(50),
-                    Constraint::Percentage(50),
-                ].as_ref()
-            )
-            .split(chunks[2]);
-
-        draw_block(git_branches, "branch", f, chunks[0]);
-        draw_block(git_tags, "tag", f, chunks2[1]);
-        draw_block(git_logs, "log", f, chunks[1]);
-        draw_block(git_stash, "stash", f, chunks2[0]);
+        draw_block(git_branches, "branch", f, cols[0]);
+        draw_block(git_logs, "log", f, cols[1]);
+        draw_block(git_stash, "stash", f, right_col[0]);
+        draw_block(git_remotes, "remote", f, right_col[1]);
+        draw_block(git_tags, "tag", f, right_col[2]);
     })
 }
