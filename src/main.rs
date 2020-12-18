@@ -45,7 +45,7 @@ fn split_by_percentages(pers: &[u16], dir: Direction,
 }
 
 fn main() -> Result<(), io::Error> {
-    let git_branches = git_cmd("show-branch", ["-a"].as_ref());
+    let git_branches = git_cmd("branch", ["-a"].as_ref());
     let git_logs = git_cmd("log", [].as_ref());
     let git_tags = git_cmd("tag", ["-n"].as_ref());
     let git_stash = git_cmd("stash", ["list"].as_ref());
@@ -57,7 +57,7 @@ fn main() -> Result<(), io::Error> {
     terminal.clear()?;
     terminal.draw(|f| {
         let cols = split_by_percentages(
-            &[25, 40, 35], Direction::Horizontal, 1, f.size());
+            &[20, 40, 40], Direction::Horizontal, 1, f.size());
         let right_col = split_by_percentages(
             &[25, 25, 50], Direction::Vertical, 0, cols[2]);
 
